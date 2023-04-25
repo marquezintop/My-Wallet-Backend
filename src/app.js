@@ -137,4 +137,4 @@ server.get("/transactions", async (req,res) => {
     }
 })
 
-server.listen(5000, () => console.log("Servidor aberto na porta 5000"))
+server.listen(process.env.PORT, () => console.log("Servidor aberto na porta" + process.env.PORT))
