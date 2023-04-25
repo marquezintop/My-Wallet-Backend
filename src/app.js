@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import joi from 'joi';
 import bcrypt from 'bcrypt';
 import {v4 as uuid} from 'uuid';
+import dayjs from 'dayjs';
 
 const server = express();
 
@@ -72,7 +73,9 @@ server.post("/sign-in", async (req, res) => {
         if (bcrypt.compareSync(password, user.password))  {
             const username = user.name
             const token = uuid();
-            const session = await db.collection("sessions").insertOne({userId: user._id,token, username})
+            await db.collection("sessions").insertOne({userId: user._id,token, username})
+            const session = await db.collection("sessions").findOne({token})
+            console.log(session)
             return res.status(200).send(session)
         } else {
            return res.status(401).send("Senha errada!")
@@ -82,7 +85,8 @@ server.post("/sign-in", async (req, res) => {
     }
 })
 
-server.post("/transactions", async (req,res) => {
+server.post("/transactions/:type", async (req,res) => {
+    const type = req.params.type
     const { value, description} = req.body;
     const { authorization } = req.headers;
 
@@ -100,7 +104,12 @@ server.post("/transactions", async (req,res) => {
         if (!session) return res.sendStatus(401);
         const user = await db.collection("users").findOne({_id: session.userId})
         if (user) {
-            await db.collection("transactions").insertOne({value, description, userId: session.userId});
+            await db.collection("transactions").insertOne({value, 
+                description, 
+                userId: session.userId, 
+                type: type,
+                date: dayjs().format("DD/MM")
+            });
             return res.sendStatus(200);
         } else {
             return res.sendStatus(401);
